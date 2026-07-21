@@ -1,0 +1,78 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_CREDS = "dockerhub-credentials"
+        GITHUB_CREDS = "github-credentials"
+
+        DOCKER_USER = "saazhoonmain"
+        GITHUB_USER = "MALIKABDULLAHAWAN"
+
+        PYTHON_IMAGE = "${DOCKER_USER}/cloudpulse-python"
+        FRONTEND_IMAGE = "${DOCKER_USER}/cloudpulse-frontend"
+
+        TAG = "v1.0.${env.BUILD_NUMBER}"
+    }
+
+    stages {
+        stage('Build Python Image') {
+            steps {
+                script {
+                    echo "Building Python Image (backend + worker)..."
+                    docker.build("${PYTHON_IMAGE}:${TAG}", "-f Dockerfile.python .")
+                }
+            }
+        }
+
+        stage('Build Frontend Image') {
+            steps {
+                script {
+                    echo "Building Frontend Image..."
+                    docker.build("${FRONTEND_IMAGE}:${TAG}", "-f Dockerfile.frontend .")
+                }
+            }
+        }
+
+        stage('Push Images to Registry') {
+            steps {
+                script {
+                    docker.withRegistry("https://index.docker.io/v1/", DOCKER_CREDS) {
+                        // Push versioned tags
+                        docker.image("${PYTHON_IMAGE}:${TAG}").push()
+                        docker.image("${FRONTEND_IMAGE}:${TAG}").push()
+
+                        // Also push as 'latest' (re-tags the same built image, no rebuild)
+                        docker.image("${PYTHON_IMAGE}:${TAG}").push('latest')
+                        docker.image("${FRONTEND_IMAGE}:${TAG}").push('latest')
+                    }
+                }
+            }
+        }
+
+        stage('Update Manifest Repo (CI -> CD Handoff)') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: GITHUB_CREDS,
+                    usernameVariable: 'GIT_USERNAME',
+                    passwordVariable: 'GIT_TOKEN'
+                )]) {
+                    sh '''
+                        # Clone the manifests repo
+                        git clone https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/${GITHUB_USER}/cloudpulse-manifests.git
+                        cd cloudpulse-manifests
+
+                        # Update the image tag in the Helm values file
+                        sed -i "s/tag: .*/tag: ${TAG}/g" cloudpulse/values.yaml
+
+                        # Commit and push the change back to GitHub
+                        git config user.email "jenkins@example.com"
+                        git config user.name "Jenkins CI"
+                        git add .
+                        git commit -m "Update images to ${TAG} [skip ci]" || echo "No changes to commit"
+                        git push origin main
+                    '''
+                }
+            }
+        }
+    }
+}
