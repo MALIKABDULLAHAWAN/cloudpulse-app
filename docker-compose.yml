@@ -7,21 +7,25 @@ services:
       - "8000:8000"
     environment:
       - REDIS_URL=redis://redis:6379/0
+      - QUEUE_NAME=task_queue
     depends_on:
       - redis
 
   worker:
     image: saazhoonmain/cloudpulse-python:latest
-    command: celery -A worker.celery_worker.celery_app worker --loglevel=info
+    command: python worker/worker.py
     environment:
       - REDIS_URL=redis://redis:6379/0
+      - QUEUE_NAME=task_queue
     depends_on:
       - redis
+    ports:
+      - "8001:8001"  # Prometheus metrics for worker
 
   frontend:
     image: saazhoonmain/cloudpulse-frontend:latest
     ports:
-      - "3000:3000"
+      - "3000:80"
     depends_on:
       - backend
 
