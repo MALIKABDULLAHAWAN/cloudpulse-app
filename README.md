@@ -23,7 +23,7 @@
 
 CloudPulse is a real-time cloud resource monitoring web application. It has three main components running as microservices:
 
-| Service | Language | Role | 
+| Service | Language | Role |  
 |---|---|---|
 | **Frontend** | HTML/JS | Browser UI that displays cloud metrics |
 | **Backend** | Python (Flask) | REST API that serves data to the frontend |
