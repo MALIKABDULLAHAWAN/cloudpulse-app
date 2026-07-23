@@ -15,6 +15,19 @@ pipeline {
     }
 
     stages {
+        stage('Pre-Build Cleanup') {
+            steps {
+                script {
+                    echo "Cleaning Docker resources before build..."
+                    // Clean up old containers and networks to prevent resource exhaustion
+                    sh '''
+                        docker container prune -f || true
+                        docker network prune -f || true
+                    '''
+                }
+            }
+        }
+
         stage('Build Python Image') {
             steps {
                 script {
@@ -60,6 +73,30 @@ pipeline {
                         docker-compose up -d
                     '''
                 }
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                echo "Cleaning up Docker resources..."
+                // Remove stopped containers
+                sh 'docker container prune -f || true'
+                // Remove unused networks
+                sh 'docker network prune -f || true'
+                // Remove dangling images
+                sh 'docker image prune -f || true'
+            }
+        }
+        success {
+            echo "Pipeline completed successfully!"
+        }
+        failure {
+            script {
+                echo "Pipeline failed. Performing aggressive cleanup..."
+                // More aggressive cleanup on failure
+                sh 'docker system prune -f || true'
             }
         }
     }
