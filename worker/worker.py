@@ -4,8 +4,8 @@ import time
 import redis
 import datetime
 from prometheus_client import start_http_server, Counter
-from database import get_engine, get_session_local
-from models import Base, Task
+from worker.database import get_engine, get_session_local
+from worker.models import Base, Task
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 QUEUE_NAME = os.getenv("QUEUE_NAME", "task_queue")

@@ -10,8 +10,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 
-from database import get_db, get_engine
-from models import Base, Task
+from backend.database import get_db, get_engine
+from backend.models import Base, Task
 
 # ---------------------------------------------------------------------------
 # Redis / fallback in-process queue
@@ -58,7 +58,7 @@ REQUEST_LATENCY = Histogram('request_latency_seconds', 'Request latency', ['endp
 def _local_worker_thread():
     """Process jobs from the in-process queue when Redis is not available."""
     import datetime
-    from database import get_session_local
+    from backend.database import get_session_local
     while True:
         try:
             job = _local_queue.get(timeout=1)
