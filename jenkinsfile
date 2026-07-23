@@ -49,27 +49,15 @@ pipeline {
             }
         }
 
-        stage('Update Manifest Repo (CI -> CD Handoff)') {
+        stage('Deploy locally with Docker Compose') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: GITHUB_CREDS,
-                    usernameVariable: 'GIT_USERNAME',
-                    passwordVariable: 'GIT_TOKEN'
-                )]) {
+                script {
+                    echo "Deploying application locally using Docker Compose..."
+                    // We can just pull the latest images we just pushed and run docker-compose
                     sh '''
-                        # Clone the manifests repo
-                        git clone https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/${GITHUB_USER}/cloudpulse-manifests.git
-                        cd cloudpulse-manifests
-
-                        # Update the image tag in the Helm values file
-                        sed -i "s/tag: .*/tag: ${TAG}/g" cloudpulse/values.yaml
-
-                        # Commit and push the change back to GitHub
-                        git config user.email "jenkins@example.com"
-                        git config user.name "Jenkins CI"
-                        git add .
-                        git commit -m "Update images to ${TAG} [skip ci]" || echo "No changes to commit"
-                        git push origin main
+                        docker-compose down || true
+                        docker-compose pull
+                        docker-compose up -d
                     '''
                 }
             }
