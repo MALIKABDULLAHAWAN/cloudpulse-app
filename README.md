@@ -149,9 +149,6 @@ Instead of Kubernetes, we use **Docker Compose** on the single EC2 instance. Thi
 - ✅ Completely Free Tier eligible (1x `t3.micro` only).
 - ✅ Still demonstrates CI/CD, containerization, and Infrastructure as Code.
 
-**Interview Explanation:**
-> *"AWS account limits blocked a multi-node Kubernetes deployment. Rather than letting infrastructure constraints block the release cycle, I pivoted to a Docker Compose architecture on EC2. This reduced infrastructure cost to zero while maintaining full CI/CD automation. In production, this would scale to EKS once the account quota is increased."*
-
 ---
 
 ## Current Status
@@ -219,16 +216,3 @@ devops Projects/
 
 ---
 
-## Interview Talking Points
-
-**"What did you build?"**
-> A complete DevOps pipeline for a cloud monitoring web application — containerization with Docker, CI/CD with Jenkins, and infrastructure provisioned as code using Terraform on AWS.
-
-**"What was the hardest challenge?"**
-> Debugging silent EC2 User Data failures. Jenkins quietly changed their minimum requirement from Java 17 to Java 21 and rotated their GPG signing keys, causing the installation to fail silently on boot. To fix this, I generated an RSA SSH key, injected it into the Terraform code, rebuilt the server, SSH'd in, and trailed `/var/log/cloud-init-output.log`. From there I successfully diagnosed the missing GPG fingerprint and the Java version conflict, applying the fix live and updating the IaC script to prevent future failures.
-
-**"Why Docker Compose instead of Kubernetes?"**
-> I successfully provisioned an EKS Kubernetes control plane, but the AWS sandbox account's 8 vCPU On-Demand limit blocked worker node creation. Rather than blocking the pipeline, I pivoted to Docker Compose — a real production architecture used at many companies — while designing the system so that migrating back to EKS requires only a Jenkinsfile change.
-
-**"What is Infrastructure as Code?"**
-> Instead of manually clicking through the AWS console, I wrote Terraform files that describe the desired infrastructure. The entire environment is version-controlled, auditable, and can be recreated from scratch in minutes by running one command.
